@@ -7,7 +7,7 @@
 
 ## Introduction
 
-This proposal seeks to add an additional type of initializer to the Swift language, a factory initializer, to compliment the existing required and convenience initializers. Unlike these other initializers, a factory initializer will allow for returning an instance of a type directly that either conforms to or is a subtype of the type declaring the factory initializer.
+This proposal seeks to add an additional type of initializer to the Swift language, a factory initializer, to complement the existing required and convenience initializers. Unlike these other initializers, a factory initializer will allow for returning an instance of a type directly that either conforms to or is a subtype of the type declaring the factory initializer.
 
 Swift-evolution thread: [[Proposal] Factory Initializers](https://lists.swift.org/pipermail/swift-evolution/Week-of-Mon-20151214/003192.html)
 
