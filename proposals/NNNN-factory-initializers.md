@@ -17,7 +17,7 @@ The "factory" pattern is common in many languages, including Objective-C. Essent
 
 ## Proposed solution
 
-Rather than have a separate factory method, I propose we build the factory pattern right into Swift, by way of specialized “factory initializers”. The exact syntax was proposed by Philippe Hausler from a [previous Swift-Evolution 	thread](https://lists.swift.org/pipermail/swift-evolution/Week-of-Mon-20151207/001328.html), and I think it is an excellent solution:
+Rather than have a separate factory method, I propose we build the factory pattern right into Swift, by way of specialized “factory initializers”. The exact syntax was proposed by Philippe Hausler from a [previous Swift-Evolution     thread](https://lists.swift.org/pipermail/swift-evolution/Week-of-Mon-20151207/001328.html), and I think it is an excellent solution:
 
 ```swift
 public class AbstractBase {
@@ -40,18 +40,18 @@ class ConcreteImplementationTwo : AbstractBase {}
 
 Unlike the existing Swift initializers, an instance of a type can be returned directly from the factory initializer. This is similar to Objective-C’s handling of initializers, and allows for more flexibility. As for overriding, just like convenience initializers, factory initializers should _not_ be able to be overridden by subclasses.
 
-Additionally, factory initializers should be available for protocols as well, such as the following instance:
+Additionally, factory initializers should be available on protocol extensions as well, such as in the following example:
 
 ```swift
-public protocol MyProtocol {
-    public factory init(type: InformationToSwitchOn) {
-        return ConformingStruct(privateType: type)
+protocol MyProtocol {}
+
+extension MyProtocol {
+    factory init() {
+        return ConformingStruct()
     }
 }
 
-private struct ConformingStruct: MyProtocol {
-    init(privateType: InformationToSwitchOn) {}
-}
+private struct ConformingStruct: MyProtocol {}
 ```
 
 This would allow developers to expose a protocol, and provide a way to instantiate a “default” type for the protocol, without having to also declare the default type as public. This is similar in part to instantiating an anonymous class conforming to a particular interface in Java.
