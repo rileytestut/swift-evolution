@@ -1,4 +1,4 @@
-# Indirect Initializers
+# Factory Initializers
 
 * Proposal: SE-NNNN
 * Author: [Riley Testut](http://twitter.com/rileytestut), [Gor Gyolchanyan](https://github.com/technogen-gg)
@@ -7,7 +7,7 @@
 
 ## Introduction
 
-We propose adding an additional type of initializer to the Swift language, an `indirect` initializer. An `indirect` initializer will provide a way to return an instance that is not the exact type implied by the declaration context. When declared in a class, an instance of the class or one of its subclasses will be returned. When declared in a protocol extension, an instance of a conforming type will be returned.
+We propose adding an additional type of initializer to the Swift language, a `factory` initializer. A `factory` initializer will provide a way to return an instance that is not the exact type implied by the declaration context. When declared in a class, an instance of the class or one of its subclasses will be returned. When declared in a protocol extension, an instance of a conforming type will be returned.
 
 Swift-evolution threads: [[Proposal] Factory Initializers](https://lists.swift.org/pipermail/swift-evolution/Week-of-Mon-20151214/003192.html), [[Proposal] Uniform Initialization Syntax](https://lists.swift.org/pipermail/swift-evolution/Week-of-Mon-20170605/037275.html)
 
@@ -17,27 +17,27 @@ The "factory" pattern is common in many languages, including Objective-C. Essent
 
 ## Proposed solution
 
-Rather than have a separate factory method, we propose we build the factory pattern right into Swift, by way of specialized “indirect initializers”. Indirect initializers are able to directly return a value whose type is upperbounded by `Self`.
+Rather than have a separate factory method, we propose we build the factory pattern right into Swift, by way of specialized “factory initializers”. Factory initializers are able to directly return a value whose type is upperbounded by `Self`.
 
-Additionally, indirect initializers would be able to be implemented via protocol extensions. This would allow developers to expose a protocol, and provide a way to instantiate a “default” type for the protocol, without having to also declare the default type as public. This is similar to instantiating an anonymous class conforming to a particular interface in Java.
+Additionally, factory initializers would be able to be implemented via protocol extensions. This would allow developers to expose a protocol, and provide a way to instantiate a “default” type for the protocol, without having to also declare the default type as public. This is similar to instantiating an anonymous class conforming to a particular interface in Java.
 
 ## Detailed Design
 
-1. The existing `indirect` keyword used for declaring indirect enums will be able to be applied to initializers, designating them indirect.
-2. Compared to current initializers, indirect initializers must _return_ a value, not delegate calls to another initializer.
-3. The returned value's type must be upperbounded by `Self`. The specifics of this depend on whether the indirect initializer is a member of a class, value type, or protocol extension:
-    * Class: Returned value must be an instance of the class declaring the indirect initializer, or a subclass.
-    * Value-Type: Returned value's type must be the same as the type declaring the indirect initializer.
+1. A new `factory` keyword that designates initializers as factory initializers.
+2. Compared to current initializers, factory initializers must _return_ a value, not delegate calls to another initializer.
+3. The returned value's type must be upperbounded by `Self`. The specifics of this depend on whether the factory initializer is a member of a class, value type, or protocol extension:
+    * Class: Returned value must be an instance of the class declaring the factory initializer, or a subclass.
+    * Value-Type: Returned value's type must be the same as the type declaring the factory initializer.
     * Protocol Extension: Returned value's type must conform to the protocol being extended.
-4. Indirect initializers would _not_ be able to be overridden by subclasses, just like convenience initializers.
-5. Indirect initializers _must_ have a different method signature than the type's other initializers. This way, it is possible to call any other initializer on Self without ambiguity, allowing us to return an instance of Self in addition to any subclasses, such as here:
+4. Factory initializers would _not_ be able to be overridden by subclasses, just like convenience initializers.
+5. Factory initializers _must_ have a different method signature than the type's other initializers. This way, it is possible to call any other initializer on Self without ambiguity, allowing us to return an instance of Self in addition to any subclasses, such as here:
 
 ```swift
-public class Base {
+class Base {
 
     private init(privateInfo: InformationToSwitchOn) {}
 
-    public indirect init(info: InformationToSwitchOn) {
+    factory init(info: InformationToSwitchOn) {
         if … {
             return Base(privateInfo: type) // Returns instance of type Self
         }
@@ -59,7 +59,7 @@ class AbstractBase {
 
     private init(privateType: InformationToSwitchOn) {}
     
-    indirect init(type: InformationToSwitchOn) {
+    factory init(type: InformationToSwitchOn) {
         if … {
             return ConcreteImplementationOne(privateType: type)
         }
@@ -79,7 +79,7 @@ __Protocol Extension__
 protocol MyProtocol {}
 
 extension MyProtocol {
-    indirect init() {
+    factory init() {
         return ConformingStruct()
     }
 }
@@ -88,10 +88,10 @@ private struct ConformingStruct: MyProtocol {}
 ```
 
 __Class Cluster/Abstract Classes__  
-This was the reasoning behind the original proposal, and I still think it would be a very valid use case. The public superclass would declare all the public methods, and could delegate off the specific implementations to the private subclasses. Alternatively, this method could be used as an easy way to handle backwards-compatibility: rather than litter the code with branches depending on the OS version, simply return the OS-appropriate subclass from the indirect initializer. Very useful.
+This was the reasoning behind the original proposal, and I still think it would be a very valid use case. The public superclass would declare all the public methods, and could delegate off the specific implementations to the private subclasses. Alternatively, this method could be used as an easy way to handle backwards-compatibility: rather than litter the code with branches depending on the OS version, simply return the OS-appropriate subclass from the factory initializer. Very useful.
 
 __Initializing Storyboard-backed View Controller__  
-This is more specific to Apple Frameworks, but having indirect initializers could definitely help here. Currently, view controllers associated with a storyboard must be initialized from the client through a factory method on the storyboard instance (storyboard.instantiateViewControllerWithIdentifier()). This works when the entire flow of the app is storyboard based, but when a single storyboard is used to configure a one-off view controller, having to initialize through the storyboard is essentially use of private implementation details; it shouldn’t matter whether the VC was designed in code or storyboards, ultimately a single initializer should “do the right thing” (just as it does when using XIBs directly). An indirect initializer for a View Controller subclass could handle the loading of the storyboard and returning the appropriate view controller.
+This is more specific to Apple Frameworks, but having factory initializers could definitely help here. Currently, view controllers associated with a storyboard must be initialized from the client through a factory method on the storyboard instance (storyboard.instantiateViewControllerWithIdentifier()). This works when the entire flow of the app is storyboard based, but when a single storyboard is used to configure a one-off view controller, having to initialize through the storyboard is essentially use of private implementation details; it shouldn’t matter whether the VC was designed in code or storyboards, ultimately a single initializer should “do the right thing” (just as it does when using XIBs directly). A factory initializer for a View Controller subclass could handle the loading of the storyboard and returning the appropriate view controller.
 
 ## Source Compatibility
 
@@ -99,7 +99,7 @@ This proposal will have no impact on existing code. This will only add an additi
 
 ## Effect on ABI stability
 
-This proposal could be implemented without affecting the ABI, however the existence of `indirect init` can provide static typing guarantees about non-indirect `init`, opening up optimization opportunities on the ABI level.
+This proposal could be implemented without affecting the ABI, however the existence of `factory init` can provide static typing guarantees about non-factory `init`, opening up optimization opportunities on the ABI level.
 
 ## Effect on API resilience
 
